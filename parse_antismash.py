@@ -9,6 +9,8 @@
 
 import argparse
 import glob
+import sys
+
 from Bio import SeqIO
 from Bio.SeqFeature import (
     FeatureLocation,
@@ -17,6 +19,16 @@ from collections import Counter
 
 geneFunctions = []
 geneQualifier = []
+
+def progress(count, total, suffix=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+    sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
+    sys.stdout.flush()  # As suggested by Rom Ruben
 
 class Gene:
     Location: FeatureLocation
@@ -143,9 +155,10 @@ def ParsingAndWriting(infile, outfile):
                     function = ""
 
                     if "gene_functions" in feature.qualifiers:
-                        function = feature.qualifiers["gene_functions"][0]
+                        function = feature.qualifiers["gene_functions"]
                     elif "NRPS_PKS" in feature.qualifiers:
-                        function = feature.qualifiers["NRPS_PKS"]["type"]
+                        function = feature.qualifiers["NRPS_PKS"][len(feature.qualifiers["NRPS_PKS"]) -1].replace("type:", "").replace(" ","")
+                        # print(function)
 
                     gene = Gene(name, sequence, function, feature.location)
                     genes.append(gene)
@@ -154,13 +167,19 @@ def ParsingAndWriting(infile, outfile):
         find_clusters_for_gene(gene, clusters)
 
     toWrite = ""
+    clusterCount = 0
+    geneCount = 0
     for item in clusters:
         # print(str(len(item.Genes)))
         for gene in item.Genes:
-            if item.Tag in gene.Function:
-                toWrite += item.GetStringCommun() + str(gene.Name) + "\n"
+            for function in gene.Function:
+                if item.Tag in function:
+                    toWrite += item.GetStringCommun() + str(gene.Name) + "\n"
+                    break
+            geneCount += 1
             # print(">" + str(gene.Name) + "|" + item.Tag + "|" + item.Sp + "|" + str(item.location.start.position) + ":"
             #       + str(item.location.end.position))
+        clusterCount += 1
 
     o.write(toWrite)
     o.close()
@@ -174,11 +193,15 @@ def main():
     if ARGS.directory is not None:
         path = ARGS.directory
         path_to_file = glob.glob(path + '/*.gbk')
+        count = 0
+        progress(count, len(path_to_file), path_to_file[0])
+
         for file in path_to_file:
-            print(file)
             pathFileSplit = file.split('/')
             nameFile = pathFileSplit[len(pathFileSplit) - 1]
             ParsingAndWriting(file, nameFile[:-4])
+            count += 1
+            progress(count, len(path_to_file), file)
 
     # for qualifier in geneQualifier:
     #     print(qualifier)
