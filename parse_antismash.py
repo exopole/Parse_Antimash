@@ -138,7 +138,7 @@ def ParsingAndWriting(infile, outfile):
     with open(infile) as handle:
         for record in SeqIO.parse(handle, format="gb"):
             scaffold = record.name
-            print(scaffold)
+            #print(scaffold)
 
             for feature in record.features:
                 if feature.type == "cand_cluster":
