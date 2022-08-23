@@ -20,6 +20,7 @@ from collections import Counter
 geneFunctions = []
 geneQualifier = []
 
+
 def progress(count, total, suffix=''):
     bar_len = 60
     filled_len = int(round(bar_len * count / float(total)))
@@ -29,6 +30,7 @@ def progress(count, total, suffix=''):
 
     sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
     sys.stdout.flush()  # As suggested by Rom Ruben
+
 
 class Gene:
     Location: FeatureLocation
@@ -48,6 +50,7 @@ class Cluster:
     def __init__(self):
         self.Sp = ""
         self.Tag = ""
+        self.Scaffold = ""
         self.location = FeatureLocation(0, 0)
         self.Genes = []
 
@@ -59,6 +62,7 @@ class Cluster:
         result = ""
         result += self.Sp + "\t"
         result += self.Tag + "\t"
+        result += self.Scaffold + "\t"
         result += str(self.location.start.position) + ":" + str(self.location.end.position) + "\t"
         return result
 
@@ -128,13 +132,17 @@ def ParsingAndWriting(infile, outfile):
 
     clusters = []
     genes = []
+    scaffold = ""
 
     with open(infile) as handle:
         for record in SeqIO.parse(handle, format="gb"):
             for feature in record.features:
+                if feature.type == "LOCUS":
+                    scaffold = feature.qualifiers
                 if feature.type == "cand_cluster":
                     # print("In for => " + str(len(cluster.Genes)))
                     cluster = Cluster()
+                    cluster.Scaffold = scaffold
                     cluster.Genes = []
 
                     # print("Location cluster : " + str(feature.location.start))
@@ -157,7 +165,8 @@ def ParsingAndWriting(infile, outfile):
                     if "gene_functions" in feature.qualifiers:
                         function = feature.qualifiers["gene_functions"]
                     elif "NRPS_PKS" in feature.qualifiers:
-                        function = feature.qualifiers["NRPS_PKS"][len(feature.qualifiers["NRPS_PKS"]) -1].replace("type:", "").replace(" ","")
+                        function = feature.qualifiers["NRPS_PKS"][len(feature.qualifiers["NRPS_PKS"]) - 1].replace(
+                            "type:", "").replace(" ", "")
                         # print(function)
 
                     gene = Gene(name, sequence, function, feature.location)
@@ -199,7 +208,7 @@ def main():
         for file in path_to_file:
             pathFileSplit = file.split('/')
             nameFile = pathFileSplit[len(pathFileSplit) - 1]
-            ParsingAndWriting(file, nameFile[:-4])
+            ParsingAndWriting(file, ARGS.outfile + nameFile[:-4])
             count += 1
             progress(count, len(path_to_file), file)
 
@@ -208,5 +217,6 @@ def main():
 
     # for function in geneFunctions:
     #     print(function)
+
 
 main()
