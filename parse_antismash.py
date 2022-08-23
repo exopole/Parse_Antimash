@@ -129,6 +129,7 @@ def find_clusters_for_gene(gene, clusters):
 
 def ParsingAndWriting(infile, outfile):
     o = open(outfile, "w")
+    # print("files ==> " + infile + " / " + outfile)
 
     clusters = []
     genes = []
@@ -136,9 +137,10 @@ def ParsingAndWriting(infile, outfile):
 
     with open(infile) as handle:
         for record in SeqIO.parse(handle, format="gb"):
+            scaffold = record.name
+            print(scaffold)
+
             for feature in record.features:
-                if feature.type == "LOCUS":
-                    scaffold = feature.qualifiers
                 if feature.type == "cand_cluster":
                     # print("In for => " + str(len(cluster.Genes)))
                     cluster = Cluster()
